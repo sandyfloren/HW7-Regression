@@ -63,4 +63,4 @@ def test_training():
 	model.train_model(X_train, y_train, X_val, y_val)
 	W_end = model.W.copy()
 
-	assert np.not_equal(W_start, W_end), 'Weights were not updated during training.'
+	assert np.not_equal(W_start, W_end).any(), 'Weights were not updated during training.'
