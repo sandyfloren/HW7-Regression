@@ -116,6 +116,7 @@ class LogisticRegressor(BaseRegressor):
             max_iter=max_iter,
             batch_size=batch_size
         )
+        self.epsilon = 1e-6
     
     def make_prediction(self, X) -> np.array:
         """
@@ -129,7 +130,15 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             The predicted labels (y_pred) for given X.
         """
-        pass
+        
+        if np.isnan(X).any() :
+            raise ValueError('`X` must be non-empty.')
+        if not np.issubdtype(X.dtype, np.number):
+            raise ValueError('`X` must contain only numeric data.')
+
+        exponent = -(X @ self.W.T)
+
+        return 1 / (1 + np.exp(exponent) + self.epsilon) # prevent predictions of exactly 1
     
     def loss_function(self, y_true, y_pred) -> float:
         """
@@ -143,7 +152,20 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             The mean loss (a single number).
         """
-        pass
+        if not len(y_true) == len(y_pred):
+            raise ValueError('Lengths of `y_true` and `y_pred` must match.')
+        if len(y_true) == 0 :
+            return 0
+        if not np.issubdtype(y_true.dtype, np.number):
+            raise ValueError('`y_true` must contain only numeric data.')
+        if not np.issubdtype(y_pred.dtype, np.number):
+            raise ValueError('`y_pred` must contain only numeric data.')
+        
+        n = len(y_true)
+        
+        loss = (1/n) * np.sum(y_true * np.log(y_pred + self.epsilon) + (1 - y_true) * np.log(1 - y_pred + self.epsilon))
+
+        return loss
         
     def calculate_gradient(self, y_true, X) -> np.ndarray:
         """
@@ -157,4 +179,7 @@ class LogisticRegressor(BaseRegressor):
         Returns: 
             Vector of gradients.
         """
-        pass
+        
+        y_pred = self.make_prediction(X)
+        #loss = self.loss_function(y_true, y_pred)
+        return X.T @ (y_true - y_pred)
